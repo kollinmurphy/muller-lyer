@@ -23,5 +23,8 @@
     "typescript.tsdk": "node_modules/typescript/lib",
     "files.associations": {
         "*.css": "tailwindcss",
-    }
+    },
+    "cSpell.words": [
+        "Brentano"
+    ]
 }
