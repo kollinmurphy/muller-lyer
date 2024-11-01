@@ -4,7 +4,6 @@ import { SignIn } from './SignIn';
 import { signOut } from '../data/auth';
 import { getUserData } from '../data/firestore';
 import { AccountSetup } from './AccountSetup';
-import { isSameDay } from 'date-fns';
 import { DataCollection } from './DataCollection';
 
 export const AppComponent = () => {
@@ -13,27 +12,29 @@ export const AppComponent = () => {
 
   createEffect(async () => {
     if (!user() || userData()) return;
+    console.log('fetching user data');
     const data = await getUserData(user().uid);
+    console.log('fetched user data', data);
     setUserData(data);
   });
 
-  const requiresCollectionToday = () => {
+  const requiresCollection = () => {
     if (!userData()) return false;
-    const lastCollection = new Date(userData().lastCollectionDateTime);
-    const today = new Date();
-    return !isSameDay(lastCollection, today);
+    return !userData().collectedData;
   };
 
   return (
-    <Show when={user()} fallback={<SignIn />}>
-      <Show when={userData()} fallback={<AccountSetup userId={user().uid} />}>
-        <Show when={requiresCollectionToday()} fallback={<div>You're all set! Check back in tomorrow for your next collection.</div>}>
-          <DataCollection />
+    <div class="flex flex-col items-center justify-between h-screen pb-4">
+      <Show when={user()} fallback={<SignIn />}>
+        <Show when={userData()} fallback={<AccountSetup userId={user().uid} />}>
+          <Show when={requiresCollection()} fallback={<div>Thank you for participating!</div>}>
+            <DataCollection />
+          </Show>
         </Show>
+        <button class="btn btn-ghost btn-primary btn-xs" onClick={signOut}>
+          Sign Out
+        </button>
       </Show>
-      <button class="btn btn-outline btn-primary" onClick={signOut}>
-        Sign Out
-      </button>
-    </Show>
+    </div>
   );
 };

@@ -1,37 +1,50 @@
-export type Cohort = 'brentano';
-
 export interface UserData {
   id: string;
   userId: string;
   userName: string;
-  cohort: Cohort;
-  lastCollectionDateTime: number;
+  phone: string;
+  email: string;
+  collectedData: boolean;
 }
 
-export interface CollectionSession {
-  userId: string;
-  collectionId: string;
-  collectionDateTime: number;
-}
+export type LineConfiguration = 'brentano' | 'offset' | 'vertical';
 
-export interface BrentanoData {
-  exposure: 'prolonged' | 'momentary';
-  abLength: number;
-  bcLength: number;
-  response?: 'bc-definitely-shorter' | 'bc-slightly-shorter' | 'same-length' | 'bc-slightly-longer' | 'bc-definitely-longer';
-  showAt: number;
-  hideAt: number;
-  responseTime?: number;
-  illusionMm?: number;
+export type LineVariant = 'arrowhead' | 'circle' | 'square';
+
+export interface TrialData {
+  configuration: LineConfiguration;
+  variant: LineVariant;
+  leftLength: number;
+  rightLength: number;
+  response?:
+    | 'left-definitely-longer'
+    | 'left-slightly-longer'
+    | 'same-length'
+    | 'right-slightly-longer'
+    | 'right-definitely-longer';
+  responseTimeMs?: number;
 }
 
 export interface State {
-  currentIteration: number;
-  data: BrentanoData[];
+  data: TrialData[];
 }
 
-export interface CollectionResult<T> {
+export interface CollectedTrial {
+  configuration: LineConfiguration;
+  variant: LineVariant;
+  leftLength: number;
+  rightLength: number;
+  response: NonNullable<TrialData['response']>;
+  responseTimeMs: number;
+}
+
+export interface CollectionResult {
   correct: number;
   iterations: number;
-  data: T[];
+  trials: CollectedTrial[];
+  userId: string;
+  startTime: number;
+  endTime: number;
+  exposureDelayMs: number;
+  exposureDurationMs: number;
 }

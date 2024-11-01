@@ -1,17 +1,18 @@
 import { createSignal } from 'solid-js';
-import type { Cohort } from '../data/types';
 import { createUserData } from '../data/firestore';
 
 export const AccountSetup = (props: { userId: string }) => {
   const [name, setName] = createSignal('');
-  const [cohort, setCohort] = createSignal<Cohort | null>(null);
+  const [phone, setPhone] = createSignal('');
+  const [email, setEmail] = createSignal('');
 
   const save = async () => {
     await createUserData({
       userId: props.userId,
       userName: name(),
-      cohort: cohort(),
-      lastCollectionDateTime: 0
+      phone: phone(),
+      email: email(),
+      collectedData: false
     });
     location.reload();
   };
@@ -26,12 +27,18 @@ export const AccountSetup = (props: { userId: string }) => {
           <p>Please fill out the following information to complete your account setup.</p>
           <label for="name">Name</label>
           <input type="text" value={name()} onInput={(e) => setName(e.currentTarget.value)} />
-          <label for="cohort">Cohort</label>
-          <select value={cohort()} onChange={(e) => setCohort(e.currentTarget.value as Cohort)}>
-            <option value="brentano">Brentano</option>
-          </select>
-          <button class="btn btn-primary mt-2" onClick={save}>
-            Save
+          <label for="phone">Phone</label>
+          <input type="text" value={phone()} onInput={(e) => setPhone(e.currentTarget.value)} />
+          <label for="email">Email</label>
+          <input type="text" value={email()} onInput={(e) => setEmail(e.currentTarget.value)} />
+          <button
+            class="btn btn-primary mt-2"
+            onClick={save}
+            classList={{
+              'btn-disabled': !name() || !phone() || !email()
+            }}
+          >
+            Continue
           </button>
         </div>
       </div>

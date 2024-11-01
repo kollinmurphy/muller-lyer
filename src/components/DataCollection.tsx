@@ -1,116 +1,122 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, onMount, Show } from 'solid-js';
 import { userDataSignal } from '../data/signals';
-import type { BrentanoData, Cohort, State } from '../data/types';
-import { LinesBrentano } from './LinesBrentano';
-import { add, differenceInSeconds } from 'date-fns';
-import { MOMENTARY_EXPOSURE_MS, PROLONGED_EXPOSURE_MS, RESPONSE_DELAY_MS } from '../utils/constants';
-import { createBrentanoData } from '../data/firestore';
+import type { CollectedTrial, CollectionResult, LineConfiguration, LineVariant, State, TrialData } from '../data/types';
+import { Canvas } from './Canvas';
+import { createResponseData } from '../data/firestore';
+import { getNextTrialDelay } from '../utils/delay';
+import { pickFromList } from '../utils/pick-from-list';
+import { configurationVariations, trialConfiguration, trialCountPerConfigurationVariant } from '../utils/constants';
 
-function getIterations(cohort: Cohort) {
-  switch (cohort) {
-    case 'brentano':
-      return 10;
-    default:
-      throw new Error('Invalid cohort');
-  }
-}
-
-function isCorrect(data: Pick<BrentanoData, 'abLength' | 'bcLength' | 'response'>): boolean {
+function isCorrect(data: Pick<TrialData, 'leftLength' | 'rightLength' | 'response'>): boolean {
   if (!data.response) return false;
   switch (data.response) {
-    case 'bc-definitely-shorter':
-    case 'bc-slightly-shorter':
-      return data.bcLength < data.abLength;
+    case 'left-definitely-longer':
+    case 'left-slightly-longer':
+      return data.leftLength > data.rightLength;
     case 'same-length':
-      return data.bcLength === data.abLength;
-    case 'bc-slightly-longer':
-    case 'bc-definitely-longer':
-      return data.bcLength > data.abLength;
+      return data.leftLength === data.rightLength;
+    case 'right-slightly-longer':
+    case 'right-definitely-longer':
+      return data.rightLength > data.leftLength;
   }
 }
 
-function getIllusionMm(data: Pick<BrentanoData, 'abLength' | 'bcLength' | 'response'>): number {
-  if (!data.response || isCorrect(data)) return 0;
-  const estimatedLength = data.abLength + getEstimatedDelta(data.response);
-  return estimatedLength - data.bcLength;
-}
-
-function getEstimatedDelta(response: BrentanoData['response']): number {
-  switch (response) {
-    case 'bc-definitely-shorter':
-      return -5;
-    case 'bc-slightly-shorter':
-      return -3;
-    case 'same-length':
-      return 0;
-    case 'bc-slightly-longer':
-      return 3;
-    case 'bc-definitely-longer':
-      return 5;
-  }
+function getConfigurationVariation(idx: number): [LineConfiguration, LineVariant] {
+  return configurationVariations[Math.floor(idx / trialCountPerConfigurationVariant)];
 }
 
 export const DataCollection = () => {
+  const startTime = Date.now();
   const [userData] = userDataSignal;
-  const iterations = () => getIterations(userData().cohort);
   const [state, setState] = createSignal<State>({
-    currentIteration: 0,
-    data: [
-      {
-        abLength: 100,
-        bcLength: 100,
-        exposure: 'prolonged',
-        showAt: add(new Date(), { seconds: 5 }).getTime(),
-        hideAt: add(new Date(), { seconds: 10 }).getTime()
-      }
-    ]
+    data: []
   });
-  const [show, setShow] = createSignal(true);
+  const [showFigure, setShowFigure] = createSignal(false);
   const [done, setDone] = createSignal(false);
-  const [enableResponse, setEnableResponse] = createSignal(true);
+  const [enableResponse, setEnableResponse] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
+  const [figureShownAt, setFigureShownAt] = createSignal(0);
+  const [paused, setPaused] = createSignal(false);
 
   const next = () => state().data.find((d) => !d.response);
 
-  const respond = (response: BrentanoData['response']) => {
+  const prepareNextFigure = () => {
+    const currentIdx = state().data.length;
+    const [configuration, variation] = getConfigurationVariation(currentIdx);
+    const subsequent: TrialData = {
+      configuration,
+      variant: variation,
+      leftLength: pickFromList(trialConfiguration.lengthBuckets),
+      rightLength: pickFromList(trialConfiguration.lengthBuckets)
+    };
+    console.log(subsequent);
+    const delay = getNextTrialDelay();
+    setTimeout(() => {
+      setShowFigure(true);
+      setFigureShownAt(Date.now());
+    }, delay);
+    setTimeout(() => {
+      setShowFigure(false);
+      setEnableResponse(true);
+    }, delay + trialConfiguration.exposureMs);
+    setState({
+      data: [...state().data, subsequent]
+    });
+    setPaused(false);
+  };
+
+  const respond = (response: TrialData['response']) => {
     const nextData = next();
     if (!nextData) return;
     nextData.response = response;
-    nextData.responseTime = Date.now();
-    nextData.illusionMm = getIllusionMm(nextData);
-    console.log((isCorrect(nextData) ? 'Correct!' : 'Incorrect :(') + ' Illusion: ' + nextData.illusionMm + 'mm');
-    const subsequent: BrentanoData = {
-      abLength: 100,
-      bcLength: 100 + Math.round(Math.random() * 30 - 10),
-      exposure: state().currentIteration < 5 ? 'prolonged' : 'momentary',
-      showAt: add(new Date(), { seconds: 5 }).getTime(),
-      hideAt: add(new Date(), { seconds: 10 }).getTime()
-    };
-    if (state().currentIteration < iterations()) {
-      setShow(false);
+    nextData.responseTimeMs = Date.now() - figureShownAt();
+    // TODO: remove log
+    console.log(isCorrect(nextData) ? 'Correct!' : 'Incorrect :(');
+
+    if (state().data.length < trialConfiguration.totalTrials) {
+      setShowFigure(false);
       setEnableResponse(false);
-      setTimeout(() => setShow(true), RESPONSE_DELAY_MS);
-      setTimeout(() => {
-        setShow(false);
-        setEnableResponse(true);
-      }, RESPONSE_DELAY_MS + (subsequent.exposure === 'momentary' ? MOMENTARY_EXPOSURE_MS : PROLONGED_EXPOSURE_MS));
-      setState({
-        currentIteration: state().currentIteration + 1,
-        data: [...state().data, subsequent]
-      });
+      const [nextConfiguration, nextVariant] = getConfigurationVariation(state().data.length);
+      const [thisConfiguration, thisVariant] = getConfigurationVariation(state().data.length - 1);
+      if (nextConfiguration !== thisConfiguration || nextVariant !== thisVariant) {
+        setPaused(true);
+      } else {
+        prepareNextFigure();
+      }
     } else {
       setDone(true);
       setLoading(true);
-      createBrentanoData(userData().id, {
+      createResponseData(userData().id, {
         correct: state().data.filter(isCorrect).length,
         iterations: state().data.length,
-        data: state().data
-      }).then(() => setLoading(false));
+        trials: state().data.map(
+          (trial) =>
+            ({
+              configuration: trial.configuration,
+              variant: trial.variant,
+              leftLength: trial.leftLength,
+              response: trial.response!,
+              responseTimeMs: trial.responseTimeMs!,
+              rightLength: trial.rightLength
+            } satisfies CollectedTrial)
+        ),
+        userId: userData().id,
+        endTime: Date.now(),
+        startTime,
+        exposureDelayMs: trialConfiguration.exposureMs,
+        exposureDurationMs: trialConfiguration.exposureMs
+      } satisfies CollectionResult).then(() => setLoading(false));
     }
   };
 
+  onMount(prepareNextFigure);
+
+  const isHorizontal = () => next()?.configuration === 'brentano';
+  const left = () => (isHorizontal() ? 'left' : 'top');
+  const right = () => (isHorizontal() ? 'right' : 'bottom');
+
   return (
-    <div>
+    <div class="flex-1 flex flex-col justify-between items-center mb-4">
       <Show
         when={!done()}
         fallback={
@@ -122,28 +128,65 @@ export const DataCollection = () => {
           </div>
         }
       >
+        <div class="pt-4 flex flex-col gap-4">
+          <Canvas trial={next()} showFigure={showFigure()} />
+          <Show when={paused()}>
+            <div class="bg-gray-200 p-4 rounded-lg flex flex-col gap-3 items-center">
+              <span>Section complete.</span>
+              <button class="btn btn-primary" onClick={prepareNextFigure}>
+                Continue
+              </button>
+            </div>
+          </Show>
+        </div>
         <div
+          class="flex gap-2 flex-wrap justify-center opacity-30 py-8 transition-opacity w-[100vw] items-center"
           classList={{
-            invisible: !show()
+            'hover:opacity-100': enableResponse(),
+            'flex-row': isHorizontal(),
+            'flex-col': !isHorizontal(),
+            invisible: !next()
           }}
         >
-          <LinesBrentano lengthAb={next().abLength} lengthBc={next().bcLength} />
-        </div>
-        <div>
-          <button class="btn btn-primary" disabled={!enableResponse()} onClick={() => respond('bc-definitely-shorter')}>
-            BC is definitely shorter
+          <button
+            class="btn btn-primary"
+            classList={{ 'w-[300px]': !isHorizontal() }}
+            disabled={!enableResponse()}
+            onClick={() => respond('left-definitely-longer')}
+          >
+            {left()} is definitely longer
           </button>
-          <button class="btn btn-primary" disabled={!enableResponse()} onClick={() => respond('bc-slightly-shorter')}>
-            BC is slightly shorter
+          <button
+            class="btn btn-primary"
+            classList={{ 'w-[300px]': !isHorizontal() }}
+            disabled={!enableResponse()}
+            onClick={() => respond('left-slightly-longer')}
+          >
+            {left()} is slightly longer
           </button>
-          <button class="btn btn-primary" disabled={!enableResponse()} onClick={() => respond('same-length')}>
-            BC is the same length
+          <button
+            class="btn btn-primary"
+            classList={{ 'w-[300px]': !isHorizontal() }}
+            disabled={!enableResponse()}
+            onClick={() => respond('same-length')}
+          >
+            same length
           </button>
-          <button class="btn btn-primary" disabled={!enableResponse()} onClick={() => respond('bc-slightly-longer')}>
-            BC is slightly longer
+          <button
+            class="btn btn-primary"
+            classList={{ 'w-[300px]': !isHorizontal() }}
+            disabled={!enableResponse()}
+            onClick={() => respond('right-slightly-longer')}
+          >
+            {right()} is slightly longer
           </button>
-          <button class="btn btn-primary" disabled={!enableResponse()} onClick={() => respond('bc-definitely-longer')}>
-            BC is definitely longer
+          <button
+            class="btn btn-primary"
+            classList={{ 'w-[300px]': !isHorizontal() }}
+            disabled={!enableResponse()}
+            onClick={() => respond('right-definitely-longer')}
+          >
+            {right()} is definitely longer
           </button>
         </div>
       </Show>

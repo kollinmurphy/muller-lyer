@@ -1,10 +1,10 @@
 import { addDoc, collection, doc, getDocs, getFirestore, query, updateDoc, where } from 'firebase/firestore';
 import { firebaseApp } from './firebase';
-import type { BrentanoData, CollectionResult, UserData } from './types';
+import type { CollectionResult, UserData } from './types';
 
 const db = getFirestore(firebaseApp);
 const USER_DATA_COLLECTION = 'userData';
-const BRENTANO_DATA_COLLECTION = 'brentanoData';
+const RESPONSE_DATA_COLLECTION = 'responseData';
 
 export const getUserData = async (userId: string) => {
   const q = query(collection(db, USER_DATA_COLLECTION), where('userId', '==', userId));
@@ -24,7 +24,7 @@ export const updateUserData = async (id: UserData['id'], userData: Partial<UserD
   await updateDoc(doc(db, USER_DATA_COLLECTION, id), userData);
 };
 
-export const createBrentanoData = async (userId: string, data: CollectionResult<BrentanoData>) => {
-  await addDoc(collection(db, BRENTANO_DATA_COLLECTION), { userId, ...data });
+export const createResponseData = async (userId: string, data: CollectionResult) => {
+  await addDoc(collection(db, RESPONSE_DATA_COLLECTION), { userId, ...data });
   await updateDoc(doc(db, USER_DATA_COLLECTION, userId), { lastCollectionDateTime: Date.now() });
 };
