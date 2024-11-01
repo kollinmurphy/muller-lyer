@@ -1,5 +1,5 @@
 import type { TrialData } from '../data/types';
-import { figureConfiguration, PIXELS_PER_MM, trialConfiguration } from './constants';
+import { figureConfiguration, PIXELS_PER_MM, trialConfiguration } from './configuration';
 
 export const canvasWidth = figureConfiguration.diagramWidthMm * PIXELS_PER_MM;
 export const canvasHeight = figureConfiguration.diagramHeightMm * PIXELS_PER_MM;
@@ -12,6 +12,7 @@ function drawArrowheadLine(
   options: {
     obliquesInward: boolean;
     drawLeft: boolean;
+    drawShaft: boolean;
     sample: boolean;
   }
 ) {
@@ -22,9 +23,11 @@ function drawArrowheadLine(
 
   const headDir = options.obliquesInward ? 1 : -1;
 
-  // center
-  ctx.moveTo(topLeftX, topLeftY);
-  ctx.lineTo(topLeftX + length, topLeftY);
+  if (options.drawShaft) {
+    // center
+    ctx.moveTo(topLeftX, topLeftY);
+    ctx.lineTo(topLeftX + length, topLeftY);
+  }
 
   if (options.drawLeft) {
     // top left
@@ -57,6 +60,76 @@ function drawArrowheadLine(
   );
 
   ctx.stroke();
+
+  if (options.sample) {
+    ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
+    ctx.beginPath();
+    ctx.strokeStyle = figureConfiguration.sample.strokeStyle;
+    ctx.lineWidth = figureConfiguration.sample.lineWidth;
+
+    if (options.drawLeft) {
+      ctx.moveTo(topLeftX, topLeftY - sampleOffsetY);
+      ctx.lineTo(topLeftX, topLeftY + sampleOffsetY);
+    }
+
+    ctx.moveTo(topLeftX + length, topLeftY - sampleOffsetY);
+    ctx.lineTo(topLeftX + length, topLeftY + sampleOffsetY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawDot(
+  ctx: CanvasRenderingContext2D,
+  options: {
+    x: number;
+    y: number;
+  }
+) {
+  ctx.fillStyle = figureConfiguration.lineColor;
+  ctx.beginPath();
+  ctx.arc(options.x, options.y, trialConfiguration.variations.obliqueCircles.radiusMm * PIXELS_PER_MM, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+function drawObliqueCircles(
+  ctx: CanvasRenderingContext2D,
+  topLeft: [number, number],
+  length: number,
+  options: {
+    obliquesInward: boolean;
+    drawLeft: boolean;
+    sample: boolean;
+  }
+) {
+  const [topLeftX, topLeftY] = topLeft;
+  ctx.strokeStyle = figureConfiguration.lineColor;
+  ctx.lineWidth = figureConfiguration.lineWidth;
+  ctx.beginPath();
+
+  const headDir = options.obliquesInward ? 1 : -1;
+
+  if (options.drawLeft) {
+    drawDot(ctx, { x: topLeftX, y: topLeftY });
+    drawDot(ctx, {
+      x: topLeftX + trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
+      y: topLeftY - trialConfiguration.variations.obliqueCircles.obliqueY
+    });
+    drawDot(ctx, {
+      x: topLeftX + trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
+      y: topLeftY + trialConfiguration.variations.obliqueCircles.obliqueY
+    });
+  }
+
+  drawDot(ctx, { x: topLeftX + length, y: topLeftY });
+  drawDot(ctx, {
+    x: topLeftX + length - trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
+    y: topLeftY - trialConfiguration.variations.obliqueCircles.obliqueY
+  });
+  drawDot(ctx, {
+    x: topLeftX + length - trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
+    y: topLeftY + trialConfiguration.variations.obliqueCircles.obliqueY
+  });
 
   if (options.sample) {
     ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
@@ -246,15 +319,28 @@ export function drawFigure(
   const right = rightUnrounded.map((v) => Math.round(v)) as [number, number];
   switch (config.variant) {
     case 'arrowhead':
-      drawArrowheadLine(ctx, left, leftLength, { obliquesInward: true, drawLeft: true, sample });
+    case 'obliques': {
+      const drawShaft = config.variant === 'arrowhead';
+      drawArrowheadLine(ctx, left, leftLength, {
+        obliquesInward: true,
+        drawLeft: true,
+        sample,
+        drawShaft
+      });
       drawArrowheadLine(ctx, right, rightLength, {
         obliquesInward: false,
         drawLeft: config.configuration !== 'brentano',
-        sample
+        sample,
+        drawShaft
       });
       break;
+    }
     case 'circle':
-      drawCircleLine(ctx, left, leftLength, { obliquesInward: true, drawLeft: true, sample });
+      drawCircleLine(ctx, left, leftLength, {
+        obliquesInward: true,
+        drawLeft: true,
+        sample
+      });
       drawCircleLine(ctx, right, rightLength, {
         obliquesInward: false,
         drawLeft: config.configuration !== 'brentano',
@@ -262,12 +348,30 @@ export function drawFigure(
       });
       break;
     case 'square':
-      drawSquareLine(ctx, left, leftLength, { obliquesInward: true, drawLeft: true, sample });
+      drawSquareLine(ctx, left, leftLength, {
+        obliquesInward: true,
+        drawLeft: true,
+        sample
+      });
       drawSquareLine(ctx, right, rightLength, {
         obliquesInward: false,
         drawLeft: config.configuration !== 'brentano',
         sample
       });
+      break;
+    case 'circle-obliques': {
+      drawObliqueCircles(ctx, left, leftLength, {
+        obliquesInward: true,
+        drawLeft: true,
+        sample
+      });
+      drawObliqueCircles(ctx, right, rightLength, {
+        obliquesInward: false,
+        drawLeft: config.configuration !== 'brentano',
+        sample
+      });
+      break;
+    }
   }
 }
 

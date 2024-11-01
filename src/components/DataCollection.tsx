@@ -4,7 +4,7 @@ import type { CollectedTrial, CollectionResult, LineConfiguration, LineVariant, 
 import { Canvas } from './Canvas';
 import { createResponseData } from '../data/firestore';
 import { pickFromList } from '../utils/pick-from-list';
-import { configurationVariations, trialConfiguration, trialCountPerConfigurationVariant } from '../utils/constants';
+import { configurationVariations, trialConfiguration, trialsPerConfigurationVariation } from '../utils/configuration';
 import { ThankYou } from './ThankYou';
 
 function isCorrect(data: Pick<TrialData, 'leftLength' | 'rightLength' | 'response'>): boolean {
@@ -22,7 +22,7 @@ function isCorrect(data: Pick<TrialData, 'leftLength' | 'rightLength' | 'respons
 }
 
 function getConfigurationVariation(idx: number): [LineConfiguration, LineVariant] {
-  return configurationVariations[Math.floor(idx / trialCountPerConfigurationVariant)];
+  return configurationVariations[Math.floor(idx / trialsPerConfigurationVariation)];
 }
 
 function getSampleFigure(configuration: LineConfiguration, variant: LineVariant): TrialData {
@@ -133,7 +133,7 @@ export const DataCollection = () => {
         fallback={
           <div class="py-4 font-bold text-lg">
             <Show when={loading()} fallback={<ThankYou />}>
-              <div class="font-bold">Loading...</div>
+              <div>Loading...</div>
             </Show>
           </div>
         }

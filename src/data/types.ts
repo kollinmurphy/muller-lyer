@@ -5,11 +5,12 @@ export interface UserData {
   phone: string;
   email: string;
   collectedData: boolean;
+  percentCorrect?: number;
 }
 
 export type LineConfiguration = 'brentano' | 'offset' | 'vertical';
 
-export type LineVariant = 'arrowhead' | 'circle' | 'square';
+export type LineVariant = 'arrowhead' | 'circle' | 'square' | 'obliques' | 'circle-obliques';
 
 export interface TrialData {
   configuration: LineConfiguration;

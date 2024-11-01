@@ -6,7 +6,7 @@ import {
   LINES_VERTICAL_OFFSET,
   OBLIQUE_X,
   OBLIQUE_Y
-} from '../utils/constants';
+} from '../utils/configuration';
 import { drawArrowheadLine } from '../utils/figures';
 
 export const LinesOffset = () => {

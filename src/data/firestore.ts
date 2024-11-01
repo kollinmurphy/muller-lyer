@@ -1,6 +1,7 @@
 import { addDoc, collection, doc, getDocs, getFirestore, query, updateDoc, where } from 'firebase/firestore';
 import { firebaseApp } from './firebase';
 import type { CollectionResult, UserData } from './types';
+import { userDataSignal } from './signals';
 
 const db = getFirestore(firebaseApp);
 const USER_DATA_COLLECTION = 'userData';
@@ -26,5 +27,11 @@ export const updateUserData = async (id: UserData['id'], userData: Partial<UserD
 
 export const createResponseData = async (userId: string, data: CollectionResult) => {
   await addDoc(collection(db, RESPONSE_DATA_COLLECTION), { userId, ...data });
-  await updateDoc(doc(db, USER_DATA_COLLECTION, userId), { lastCollectionDateTime: Date.now() });
+  const percentCorrect = data.correct / data.iterations;
+  await updateDoc(doc(db, USER_DATA_COLLECTION, userId), {
+    collectedData: true,
+    percentCorrect
+  } satisfies Partial<UserData>);
+  const [_, setUserData] = userDataSignal;
+  setUserData((prev) => ({ ...prev!, collectedData: true, percentCorrect }));
 };

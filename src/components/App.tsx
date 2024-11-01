@@ -5,6 +5,7 @@ import { signOut } from '../data/auth';
 import { getUserData } from '../data/firestore';
 import { AccountSetup } from './AccountSetup';
 import { DataCollection } from './DataCollection';
+import { ThankYou } from './ThankYou';
 
 export const AppComponent = () => {
   const [user] = userSignal;
@@ -27,7 +28,14 @@ export const AppComponent = () => {
     <div class="flex flex-col items-center justify-between h-screen pb-4">
       <Show when={user()} fallback={<SignIn />}>
         <Show when={userData()} fallback={<AccountSetup userId={user().uid} />}>
-          <Show when={requiresCollection()} fallback={<div>Thank you for participating!</div>}>
+          <Show
+            when={requiresCollection()}
+            fallback={
+              <div class="mt-4">
+                <ThankYou />
+              </div>
+            }
+          >
             <DataCollection />
           </Show>
         </Show>
