@@ -3,9 +3,9 @@ import { userDataSignal } from '../data/signals';
 import type { CollectedTrial, CollectionResult, LineConfiguration, LineVariant, State, TrialData } from '../data/types';
 import { Canvas } from './Canvas';
 import { createResponseData } from '../data/firestore';
-import { getNextTrialDelay } from '../utils/delay';
 import { pickFromList } from '../utils/pick-from-list';
 import { configurationVariations, trialConfiguration, trialCountPerConfigurationVariant } from '../utils/constants';
+import { ThankYou } from './ThankYou';
 
 function isCorrect(data: Pick<TrialData, 'leftLength' | 'rightLength' | 'response'>): boolean {
   if (!data.response) return false;
@@ -25,6 +25,16 @@ function getConfigurationVariation(idx: number): [LineConfiguration, LineVariant
   return configurationVariations[Math.floor(idx / trialCountPerConfigurationVariant)];
 }
 
+function getSampleFigure(configuration: LineConfiguration, variant: LineVariant): TrialData {
+  const length = pickFromList(trialConfiguration.lengthBuckets);
+  return {
+    configuration,
+    variant,
+    leftLength: length,
+    rightLength: length
+  };
+}
+
 export const DataCollection = () => {
   const startTime = Date.now();
   const [userData] = userDataSignal;
@@ -36,7 +46,9 @@ export const DataCollection = () => {
   const [enableResponse, setEnableResponse] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
   const [figureShownAt, setFigureShownAt] = createSignal(0);
-  const [paused, setPaused] = createSignal(false);
+  const [sampleFigure, setSampleFigure] = createSignal<TrialData | null>(
+    getSampleFigure(getConfigurationVariation(0)[0], getConfigurationVariation(0)[1])
+  );
 
   const next = () => state().data.find((d) => !d.response);
 
@@ -50,19 +62,18 @@ export const DataCollection = () => {
       rightLength: pickFromList(trialConfiguration.lengthBuckets)
     };
     console.log(subsequent);
-    const delay = getNextTrialDelay();
     setTimeout(() => {
       setShowFigure(true);
       setFigureShownAt(Date.now());
-    }, delay);
+    }, trialConfiguration.trialDelayMs);
     setTimeout(() => {
       setShowFigure(false);
       setEnableResponse(true);
-    }, delay + trialConfiguration.exposureMs);
+    }, trialConfiguration.trialDelayMs + trialConfiguration.exposureMs);
     setState({
       data: [...state().data, subsequent]
     });
-    setPaused(false);
+    setSampleFigure(null);
   };
 
   const respond = (response: TrialData['response']) => {
@@ -79,7 +90,7 @@ export const DataCollection = () => {
       const [nextConfiguration, nextVariant] = getConfigurationVariation(state().data.length);
       const [thisConfiguration, thisVariant] = getConfigurationVariation(state().data.length - 1);
       if (nextConfiguration !== thisConfiguration || nextVariant !== thisVariant) {
-        setPaused(true);
+        setSampleFigure(getSampleFigure(nextConfiguration, nextVariant));
       } else {
         prepareNextFigure();
       }
@@ -103,40 +114,36 @@ export const DataCollection = () => {
         userId: userData().id,
         endTime: Date.now(),
         startTime,
-        exposureDelayMs: trialConfiguration.exposureMs,
+        exposureDelayMs: trialConfiguration.trialDelayMs,
         exposureDurationMs: trialConfiguration.exposureMs
       } satisfies CollectionResult).then(() => setLoading(false));
     }
   };
 
-  onMount(prepareNextFigure);
-
   const isHorizontal = () => next()?.configuration === 'brentano';
   const left = () => (isHorizontal() ? 'left' : 'top');
   const right = () => (isHorizontal() ? 'right' : 'bottom');
+  const mode = () => (showFigure() ? 'figure' : sampleFigure() ? 'sample' : 'hidden');
+  const nextOrSample = () => sampleFigure() || next();
 
   return (
     <div class="flex-1 flex flex-col justify-between items-center mb-4">
       <Show
         when={!done()}
         fallback={
-          <div>
-            <Show when={loading()}>
-              <div class="mb-2 font-bold">Loading...</div>
+          <div class="py-4 font-bold text-lg">
+            <Show when={loading()} fallback={<ThankYou />}>
+              <div class="font-bold">Loading...</div>
             </Show>
-            Thank you! You have completed the task.
           </div>
         }
       >
         <div class="pt-4 flex flex-col gap-4">
-          <Canvas trial={next()} showFigure={showFigure()} />
-          <Show when={paused()}>
-            <div class="bg-gray-200 p-4 rounded-lg flex flex-col gap-3 items-center">
-              <span>Section complete.</span>
-              <button class="btn btn-primary" onClick={prepareNextFigure}>
-                Continue
-              </button>
-            </div>
+          <Canvas trial={nextOrSample()} mode={mode()} />
+          <Show when={sampleFigure()}>
+            <button class="btn btn-primary w-min mx-auto" onClick={prepareNextFigure}>
+              Continue
+            </button>
           </Show>
         </div>
         <div

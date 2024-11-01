@@ -14,6 +14,13 @@ export const figureConfiguration = {
     padding: 5,
     strokeStyle: 'black',
     lineWidth: 1
+  },
+  sample: {
+    strokeStyle: 'red',
+    dashLength: 5,
+    dashSpace: 5,
+    lineWidth: 3,
+    mmOffsetY: 5
   }
 };
 const OBLIQUE_LENGTH = 10;
@@ -21,13 +28,12 @@ const obliqueX = Math.round(Math.sin(36 * (Math.PI / 180)) * OBLIQUE_LENGTH);
 const obliqueY = Math.round(Math.cos(36 * (Math.PI / 180)) * OBLIQUE_LENGTH);
 
 export const configurations: LineConfiguration[] = ['vertical', 'offset', 'brentano'];
-export const variations: LineVariant[] = ['square', 'circle', 'arrowhead'];
+export const variations: LineVariant[] = ['arrowhead', 'square', 'circle'];
 
 export const trialConfiguration = {
   exposureMs: 200,
-  trialDelayMinMs: 3_000,
-  trialDelayRandomMs: 0,
-  totalTrials: 1,
+  trialDelayMs: 3_000,
+  totalTrials: 30,
   lengthBuckets: [18, 19, 20, 21],
   configurations: {
     offset: {
