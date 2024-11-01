@@ -24,7 +24,7 @@ export const AccountSetup = (props: { userId: string }) => {
           <h1>Welcome!</h1>
         </div>
         <div class="flex flex-col gap-2">
-          <p>Please fill out the following information to complete your account setup.</p>
+          <p>Please fill out the following information to participate in the study.</p>
           <label for="name">Name</label>
           <input type="text" value={name()} onInput={(e) => setName(e.currentTarget.value)} />
           <label for="phone">Phone</label>
