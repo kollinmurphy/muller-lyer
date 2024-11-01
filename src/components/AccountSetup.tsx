@@ -7,7 +7,7 @@ export const AccountSetup = (props: { userId: string }) => {
   const [email, setEmail] = createSignal('');
 
   const save = async () => {
-    await createUserData({
+    await createUserData(props.userId, {
       userId: props.userId,
       userName: name(),
       phone: phone(),

@@ -1,5 +1,4 @@
 export interface UserData {
-  id: string;
   userId: string;
   userName: string;
   phone: string;

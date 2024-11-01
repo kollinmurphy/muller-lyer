@@ -45,7 +45,7 @@ export const DataCollection = () => {
   const [done, setDone] = createSignal(false);
   const [enableResponse, setEnableResponse] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
-  const [figureShownAt, setFigureShownAt] = createSignal(0);
+  const [figureHiddenAt, setFigureHiddenAt] = createSignal(0);
   const [sampleFigure, setSampleFigure] = createSignal<TrialData | null>(
     getSampleFigure(getConfigurationVariation(0)[0], getConfigurationVariation(0)[1])
   );
@@ -64,9 +64,9 @@ export const DataCollection = () => {
     console.log(subsequent);
     setTimeout(() => {
       setShowFigure(true);
-      setFigureShownAt(Date.now());
     }, trialConfiguration.trialDelayMs);
     setTimeout(() => {
+      setFigureHiddenAt(Date.now());
       setShowFigure(false);
       setEnableResponse(true);
     }, trialConfiguration.trialDelayMs + trialConfiguration.exposureMs);
@@ -80,7 +80,7 @@ export const DataCollection = () => {
     const nextData = next();
     if (!nextData) return;
     nextData.response = response;
-    nextData.responseTimeMs = Date.now() - figureShownAt();
+    nextData.responseTimeMs = Date.now() - figureHiddenAt();
     // TODO: remove log
     console.log(isCorrect(nextData) ? 'Correct!' : 'Incorrect :(');
 
@@ -97,7 +97,7 @@ export const DataCollection = () => {
     } else {
       setDone(true);
       setLoading(true);
-      createResponseData(userData().id, {
+      createResponseData(userData().userId, {
         correct: state().data.filter(isCorrect).length,
         iterations: state().data.length,
         trials: state().data.map(
@@ -111,7 +111,7 @@ export const DataCollection = () => {
               rightLength: trial.rightLength
             } satisfies CollectedTrial)
         ),
-        userId: userData().id,
+        userId: userData().userId,
         endTime: Date.now(),
         startTime,
         exposureDelayMs: trialConfiguration.trialDelayMs,

@@ -41,6 +41,11 @@ function calculateObliqueLengths(degrees: number, mm: number): [number, number] 
 const [obliqueX, obliqueY] = calculateObliqueLengths(OBLIQUE_DEGREES, OBLIQUE_LENGTH_MM);
 const [circleObliqueX, circleObliqueY] = calculateObliqueLengths(60, 5);
 
+// export const configurations: LineConfiguration[] = ['brentano'];
+// export const variations: LineVariant[] = ['obliques'];
+
+// export const trialsPerConfigurationVariation = 1;
+
 export const configurations: LineConfiguration[] = ['vertical', 'offset', 'brentano'];
 export const variations: LineVariant[] = ['arrowhead', 'square', 'circle', 'obliques'];
 
