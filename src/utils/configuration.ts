@@ -7,19 +7,19 @@ export const figureConfiguration = {
   diagramHeightMm: 40,
   canvasColor: 'transparent',
   lineColor: 'black',
-  lineWidth: 2,
+  lineWidthMm: 0.5,
   border: {
     dashLength: 5,
     dashSpace: 5,
     padding: 5,
     strokeStyle: 'black',
-    lineWidth: 1
+    lineWidthMm: 0.5
   },
   sample: {
     strokeStyle: 'red',
     dashLength: 5,
     dashSpace: 5,
-    lineWidth: 3,
+    lineWidthMm: 0.7,
     mmOffsetY: 5
   }
 };
@@ -56,7 +56,7 @@ export const configurationVariations: [LineConfiguration, LineVariant][] = confi
 );
 
 export const trialConfiguration = {
-  exposureMs: 350,
+  exposureMs: 500,
   trialDelayMs: 3_000,
   totalTrials: configurationVariations.length * trialsPerConfigurationVariation,
   lengthBuckets: [18, 19, 20, 21],

@@ -18,7 +18,7 @@ function drawArrowheadLine(
 ) {
   const [topLeftX, topLeftY] = topLeft;
   ctx.strokeStyle = figureConfiguration.lineColor;
-  ctx.lineWidth = figureConfiguration.lineWidth;
+  ctx.lineWidth = figureConfiguration.lineWidthMm * PIXELS_PER_MM;
   ctx.beginPath();
 
   const headDir = options.obliquesInward ? 1 : -1;
@@ -65,7 +65,7 @@ function drawArrowheadLine(
     ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
     ctx.beginPath();
     ctx.strokeStyle = figureConfiguration.sample.strokeStyle;
-    ctx.lineWidth = figureConfiguration.sample.lineWidth;
+    ctx.lineWidth = figureConfiguration.sample.lineWidthMm * PIXELS_PER_MM;
 
     if (options.drawLeft) {
       ctx.moveTo(topLeftX, topLeftY - sampleOffsetY);
@@ -104,7 +104,7 @@ function drawObliqueCircles(
 ) {
   const [topLeftX, topLeftY] = topLeft;
   ctx.strokeStyle = figureConfiguration.lineColor;
-  ctx.lineWidth = figureConfiguration.lineWidth;
+  ctx.lineWidth = figureConfiguration.lineWidthMm * PIXELS_PER_MM;
   ctx.beginPath();
 
   const headDir = options.obliquesInward ? 1 : -1;
@@ -135,7 +135,7 @@ function drawObliqueCircles(
     ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
     ctx.beginPath();
     ctx.strokeStyle = figureConfiguration.sample.strokeStyle;
-    ctx.lineWidth = figureConfiguration.sample.lineWidth;
+    ctx.lineWidth = figureConfiguration.sample.lineWidthMm * PIXELS_PER_MM;
 
     if (options.drawLeft) {
       ctx.moveTo(topLeftX, topLeftY - sampleOffsetY);
@@ -162,7 +162,7 @@ function drawCircleLine(
   const radius = trialConfiguration.variations.circle.radiusMm * PIXELS_PER_MM;
   const [topLeftX, topLeftY] = topLeft;
   ctx.strokeStyle = figureConfiguration.lineColor;
-  ctx.lineWidth = figureConfiguration.lineWidth;
+  ctx.lineWidth = figureConfiguration.lineWidthMm * PIXELS_PER_MM;
   ctx.beginPath();
 
   // center
@@ -189,7 +189,7 @@ function drawCircleLine(
     ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
     ctx.beginPath();
     ctx.strokeStyle = figureConfiguration.sample.strokeStyle;
-    ctx.lineWidth = figureConfiguration.sample.lineWidth;
+    ctx.lineWidth = figureConfiguration.sample.lineWidthMm * PIXELS_PER_MM;
 
     if (options.drawLeft) {
       ctx.moveTo(topLeftX, topLeftY - sampleOffsetY);
@@ -216,7 +216,7 @@ function drawSquareLine(
   const sideLength = trialConfiguration.variations.square.sideLengthMm * PIXELS_PER_MM;
   const [topLeftX, topLeftY] = topLeft;
   ctx.strokeStyle = figureConfiguration.lineColor;
-  ctx.lineWidth = figureConfiguration.lineWidth;
+  ctx.lineWidth = figureConfiguration.lineWidthMm * PIXELS_PER_MM;
   ctx.beginPath();
 
   // center
@@ -245,7 +245,7 @@ function drawSquareLine(
     ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
     ctx.beginPath();
     ctx.strokeStyle = figureConfiguration.sample.strokeStyle;
-    ctx.lineWidth = figureConfiguration.sample.lineWidth;
+    ctx.lineWidth = figureConfiguration.sample.lineWidthMm * PIXELS_PER_MM;
     if (options.drawLeft) {
       ctx.moveTo(topLeftX, topLeftY - sampleOffsetY);
       ctx.lineTo(topLeftX, topLeftY + sampleOffsetY);
@@ -261,7 +261,7 @@ function drawSquareLine(
 export function drawBorder(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
   ctx.setLineDash([figureConfiguration.border.dashLength, figureConfiguration.border.dashSpace]);
   ctx.strokeStyle = figureConfiguration.border.strokeStyle;
-  ctx.lineWidth = figureConfiguration.border.lineWidth;
+  ctx.lineWidth = figureConfiguration.border.lineWidthMm * PIXELS_PER_MM;
   ctx.strokeRect(
     figureConfiguration.border.padding,
     figureConfiguration.border.padding,
