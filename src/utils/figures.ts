@@ -10,6 +10,7 @@ function drawArrowheadLine(
   topLeft: [number, number],
   length: number,
   options: {
+    drawObliques: boolean;
     obliquesInward: boolean;
     drawLeft: boolean;
     drawShaft: boolean;
@@ -29,107 +30,39 @@ function drawArrowheadLine(
     ctx.lineTo(topLeftX + length, topLeftY);
   }
 
-  if (options.drawLeft) {
-    // top left
-    ctx.moveTo(topLeftX, topLeftY);
+  if (options.drawObliques) {
+    if (options.drawLeft) {
+      // top left
+      ctx.moveTo(topLeftX, topLeftY);
+      ctx.lineTo(
+        topLeftX + trialConfiguration.variations.arrowhead.obliqueX * headDir,
+        topLeftY - trialConfiguration.variations.arrowhead.obliqueY
+      );
+  
+      // bottom left
+      ctx.moveTo(topLeftX, topLeftY);
+      ctx.lineTo(
+        topLeftX + trialConfiguration.variations.arrowhead.obliqueX * headDir,
+        topLeftY + trialConfiguration.variations.arrowhead.obliqueY
+      );
+    }
+  
+    // top right
+    ctx.moveTo(topLeftX + length, topLeftY);
     ctx.lineTo(
-      topLeftX + trialConfiguration.variations.arrowhead.obliqueX * headDir,
+      topLeftX + length - trialConfiguration.variations.arrowhead.obliqueX * headDir,
       topLeftY - trialConfiguration.variations.arrowhead.obliqueY
     );
-
-    // bottom left
-    ctx.moveTo(topLeftX, topLeftY);
+  
+    // bottom right
+    ctx.moveTo(topLeftX + length, topLeftY);
     ctx.lineTo(
-      topLeftX + trialConfiguration.variations.arrowhead.obliqueX * headDir,
+      topLeftX + length - trialConfiguration.variations.arrowhead.obliqueX * headDir,
       topLeftY + trialConfiguration.variations.arrowhead.obliqueY
     );
   }
 
-  // top right
-  ctx.moveTo(topLeftX + length, topLeftY);
-  ctx.lineTo(
-    topLeftX + length - trialConfiguration.variations.arrowhead.obliqueX * headDir,
-    topLeftY - trialConfiguration.variations.arrowhead.obliqueY
-  );
-
-  // bottom right
-  ctx.moveTo(topLeftX + length, topLeftY);
-  ctx.lineTo(
-    topLeftX + length - trialConfiguration.variations.arrowhead.obliqueX * headDir,
-    topLeftY + trialConfiguration.variations.arrowhead.obliqueY
-  );
-
   ctx.stroke();
-
-  if (options.sample) {
-    ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
-    ctx.beginPath();
-    ctx.strokeStyle = figureConfiguration.sample.strokeStyle;
-    ctx.lineWidth = figureConfiguration.sample.lineWidthMm * PIXELS_PER_MM;
-
-    if (options.drawLeft) {
-      ctx.moveTo(topLeftX, topLeftY - sampleOffsetY);
-      ctx.lineTo(topLeftX, topLeftY + sampleOffsetY);
-    }
-
-    ctx.moveTo(topLeftX + length, topLeftY - sampleOffsetY);
-    ctx.lineTo(topLeftX + length, topLeftY + sampleOffsetY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-}
-
-function drawDot(
-  ctx: CanvasRenderingContext2D,
-  options: {
-    x: number;
-    y: number;
-  }
-) {
-  ctx.fillStyle = figureConfiguration.lineColor;
-  ctx.beginPath();
-  ctx.arc(options.x, options.y, trialConfiguration.variations.obliqueCircles.radiusMm * PIXELS_PER_MM, 0, 2 * Math.PI);
-  ctx.fill();
-}
-
-function drawObliqueCircles(
-  ctx: CanvasRenderingContext2D,
-  topLeft: [number, number],
-  length: number,
-  options: {
-    obliquesInward: boolean;
-    drawLeft: boolean;
-    sample: boolean;
-  }
-) {
-  const [topLeftX, topLeftY] = topLeft;
-  ctx.strokeStyle = figureConfiguration.lineColor;
-  ctx.lineWidth = figureConfiguration.lineWidthMm * PIXELS_PER_MM;
-  ctx.beginPath();
-
-  const headDir = options.obliquesInward ? 1 : -1;
-
-  if (options.drawLeft) {
-    drawDot(ctx, { x: topLeftX, y: topLeftY });
-    drawDot(ctx, {
-      x: topLeftX + trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
-      y: topLeftY - trialConfiguration.variations.obliqueCircles.obliqueY
-    });
-    drawDot(ctx, {
-      x: topLeftX + trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
-      y: topLeftY + trialConfiguration.variations.obliqueCircles.obliqueY
-    });
-  }
-
-  drawDot(ctx, { x: topLeftX + length, y: topLeftY });
-  drawDot(ctx, {
-    x: topLeftX + length - trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
-    y: topLeftY - trialConfiguration.variations.obliqueCircles.obliqueY
-  });
-  drawDot(ctx, {
-    x: topLeftX + length - trialConfiguration.variations.obliqueCircles.obliqueX * headDir,
-    y: topLeftY + trialConfiguration.variations.obliqueCircles.obliqueY
-  });
 
   if (options.sample) {
     ctx.setLineDash([figureConfiguration.sample.dashLength, figureConfiguration.sample.dashSpace]);
@@ -319,19 +252,21 @@ export function drawFigure(
   const right = rightUnrounded.map((v) => Math.round(v)) as [number, number];
   switch (config.variant) {
     case 'arrowhead':
-    case 'obliques': {
-      const drawShaft = config.variant === 'arrowhead';
+    case 'obliques':
+      case 'baseline': {
       drawArrowheadLine(ctx, left, leftLength, {
+        drawObliques: config.variant !== 'baseline',
         obliquesInward: true,
         drawLeft: true,
         sample,
-        drawShaft
+        drawShaft: config.variant !== 'obliques',
       });
       drawArrowheadLine(ctx, right, rightLength, {
+        drawObliques: config.variant !== 'baseline',
         obliquesInward: false,
         drawLeft: config.configuration !== 'brentano',
         sample,
-        drawShaft
+        drawShaft: config.variant !== 'obliques',
       });
       break;
     }
@@ -359,19 +294,6 @@ export function drawFigure(
         sample
       });
       break;
-    case 'circle-obliques': {
-      drawObliqueCircles(ctx, left, leftLength, {
-        obliquesInward: true,
-        drawLeft: true,
-        sample
-      });
-      drawObliqueCircles(ctx, right, rightLength, {
-        obliquesInward: false,
-        drawLeft: config.configuration !== 'brentano',
-        sample
-      });
-      break;
-    }
   }
 }
 

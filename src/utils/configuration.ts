@@ -47,13 +47,22 @@ const [circleObliqueX, circleObliqueY] = calculateObliqueLengths(60, 5);
 // export const trialsPerConfigurationVariation = 1;
 
 export const configurations: LineConfiguration[] = ['vertical', 'offset', 'brentano'];
-export const variations: LineVariant[] = ['arrowhead', 'square', 'circle', 'obliques'];
+export const variations: LineVariant[] = ['baseline', 'arrowhead', 'square', 'circle', 'obliques'];
 
 export const trialsPerConfigurationVariation = 5;
 
 export const configurationVariations: [LineConfiguration, LineVariant][] = configurations.flatMap(
   (c): [LineConfiguration, LineVariant][] => variations.map((v): [LineConfiguration, LineVariant] => [c, v])
-);
+).filter(([config, variant]) => config !== 'brentano' || variant !== 'baseline').sort(([, variantA], [,variantB]) => {
+    // sort baseline variant to beginning
+    if (variantA === 'baseline') {
+      return -1;
+    }
+    if (variantB === 'baseline') {
+      return 1;
+    }
+    return 0;
+})
 
 export const trialConfiguration = {
   exposureMs: 500,

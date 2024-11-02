@@ -12,7 +12,7 @@ export type EyeColor = 'blue' | 'brown' | 'green' | 'hazel' | 'amber' | 'gray' |
 
 export type LineConfiguration = 'brentano' | 'offset' | 'vertical';
 
-export type LineVariant = 'arrowhead' | 'circle' | 'square' | 'obliques' | 'circle-obliques';
+export type LineVariant = 'baseline' | 'arrowhead' | 'circle' | 'square' | 'obliques';
 
 export interface TrialData {
   configuration: LineConfiguration;
