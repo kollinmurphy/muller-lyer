@@ -1,11 +1,14 @@
 export interface UserData {
   userId: string;
   userName: string;
-  phone: string;
   email: string;
+  age: number;
+  eyeColor: string;
   collectedData: boolean;
   percentCorrect?: number;
 }
+
+export type EyeColor = 'blue' | 'brown' | 'green' | 'hazel' | 'amber' | 'gray' | 'other';
 
 export type LineConfiguration = 'brentano' | 'offset' | 'vertical';
 

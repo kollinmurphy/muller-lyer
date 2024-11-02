@@ -1,18 +1,21 @@
 import { createSignal } from 'solid-js';
 import { createUserData } from '../data/firestore';
+import type { EyeColor } from '../data/types';
 
 export const AccountSetup = (props: { userId: string }) => {
   const [name, setName] = createSignal('');
-  const [phone, setPhone] = createSignal('');
   const [email, setEmail] = createSignal('');
+  const [age, setAge] = createSignal(0);
+  const [eyeColor, setEyeColor] = createSignal<EyeColor>('blue');
 
   const save = async () => {
     await createUserData(props.userId, {
       userId: props.userId,
       userName: name(),
-      phone: phone(),
       email: email(),
-      collectedData: false
+      collectedData: false,
+      age: age(),
+      eyeColor: eyeColor()
     });
     location.reload();
   };
@@ -27,15 +30,25 @@ export const AccountSetup = (props: { userId: string }) => {
           <p>Please fill out the following information to participate in the study.</p>
           <label for="name">Name</label>
           <input type="text" value={name()} onInput={(e) => setName(e.currentTarget.value)} />
-          <label for="phone">Phone</label>
-          <input type="text" value={phone()} onInput={(e) => setPhone(e.currentTarget.value)} />
           <label for="email">Email</label>
           <input type="text" value={email()} onInput={(e) => setEmail(e.currentTarget.value)} />
+          <label for="age">Age</label>
+          <input type="number" value={age()} onInput={(e) => setAge(parseInt(e.currentTarget.value))} />
+          <label for="eyeColor">Eye Color</label>
+          <select value={eyeColor()} onChange={(e) => setEyeColor(e.currentTarget.value as EyeColor)}>
+            <option value="blue">Blue</option>
+            <option value="brown">Brown</option>
+            <option value="green">Green</option>
+            <option value="hazel">Hazel</option>
+            <option value="amber">Amber</option>
+            <option value="gray">Gray</option>
+            <option value="other">Other</option>
+          </select>
           <button
             class="btn btn-primary mt-2"
             onClick={save}
             classList={{
-              'btn-disabled': !name() || !phone() || !email()
+              'btn-disabled': !name() || !email() || !age()
             }}
           >
             Continue

@@ -1,4 +1,4 @@
-import { createSignal, onMount, Show } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import { userDataSignal } from '../data/signals';
 import type { CollectedTrial, CollectionResult, LineConfiguration, LineVariant, State, TrialData } from '../data/types';
 import { Canvas } from './Canvas';
@@ -61,7 +61,6 @@ export const DataCollection = () => {
       leftLength: pickFromList(trialConfiguration.lengthBuckets),
       rightLength: pickFromList(trialConfiguration.lengthBuckets)
     };
-    console.log(subsequent);
     setTimeout(() => {
       setShowFigure(true);
     }, trialConfiguration.trialDelayMs);
@@ -74,6 +73,31 @@ export const DataCollection = () => {
       data: [...state().data, subsequent]
     });
     setSampleFigure(null);
+  };
+
+  const submitResponse = () => {
+    setDone(true);
+    setLoading(true);
+    createResponseData(userData().userId, {
+      correct: state().data.filter(isCorrect).length,
+      iterations: state().data.length,
+      trials: state().data.map(
+        (trial) =>
+          ({
+            configuration: trial.configuration,
+            variant: trial.variant,
+            leftLength: trial.leftLength,
+            response: trial.response!,
+            responseTimeMs: trial.responseTimeMs!,
+            rightLength: trial.rightLength
+          } satisfies CollectedTrial)
+      ),
+      userId: userData().userId,
+      endTime: Date.now(),
+      startTime,
+      exposureDelayMs: trialConfiguration.trialDelayMs,
+      exposureDurationMs: trialConfiguration.exposureMs
+    } satisfies CollectionResult).then(() => setLoading(false));
   };
 
   const respond = (response: TrialData['response']) => {
@@ -95,29 +119,17 @@ export const DataCollection = () => {
         prepareNextFigure();
       }
     } else {
-      setDone(true);
-      setLoading(true);
-      createResponseData(userData().userId, {
-        correct: state().data.filter(isCorrect).length,
-        iterations: state().data.length,
-        trials: state().data.map(
-          (trial) =>
-            ({
-              configuration: trial.configuration,
-              variant: trial.variant,
-              leftLength: trial.leftLength,
-              response: trial.response!,
-              responseTimeMs: trial.responseTimeMs!,
-              rightLength: trial.rightLength
-            } satisfies CollectedTrial)
-        ),
-        userId: userData().userId,
-        endTime: Date.now(),
-        startTime,
-        exposureDelayMs: trialConfiguration.trialDelayMs,
-        exposureDurationMs: trialConfiguration.exposureMs
-      } satisfies CollectionResult).then(() => setLoading(false));
+      submitResponse();
     }
+  };
+
+  const skipFigure = () => {
+    const data = state().data;
+    data.pop();
+    setState({ data });
+    setShowFigure(false);
+    setEnableResponse(false);
+    prepareNextFigure();
   };
 
   const isHorizontal = () => next()?.configuration === 'brentano';
@@ -147,9 +159,10 @@ export const DataCollection = () => {
           </Show>
         </div>
         <div
-          class="flex gap-2 flex-wrap justify-center opacity-30 py-8 transition-opacity w-[100vw] items-center"
+          class="flex gap-2 flex-wrap justify-center py-8 transition-opacity w-[100vw] items-center"
           classList={{
-            'hover:opacity-100': enableResponse(),
+            'opacity-20': !enableResponse(),
+            'opacity-100': enableResponse(),
             'flex-row': isHorizontal(),
             'flex-col': !isHorizontal(),
             invisible: !next()
@@ -194,6 +207,18 @@ export const DataCollection = () => {
             onClick={() => respond('right-definitely-longer')}
           >
             {right()} is definitely longer
+          </button>
+        </div>
+        <div>
+          <button
+            class="btn btn-ghost btn-sm"
+            onClick={skipFigure}
+            disabled={!enableResponse()}
+            classList={{
+              'opacity-20': !enableResponse()
+            }}
+          >
+            Skip
           </button>
         </div>
       </Show>
