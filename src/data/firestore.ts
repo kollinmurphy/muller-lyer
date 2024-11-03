@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getFirestore, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from 'firebase/firestore';
 import { firebaseApp } from './firebase';
 import type { CollectionResult, UserData } from './types';
 import { userDataSignal } from './signals';
@@ -32,3 +32,13 @@ export const createResponseData = async (userId: string, data: CollectionResult)
   const [_, setUserData] = userDataSignal;
   setUserData((prev) => ({ ...prev!, collectedData: true, percentCorrect }));
 };
+
+export const listUserData = async () => {
+    const snapshot = await getDocs(collection(db, USER_DATA_COLLECTION));
+    return snapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id }) as UserData);
+}
+
+export const listResponseData = async () => {
+    const snapshot = await getDocs(collection(db, RESPONSE_DATA_COLLECTION));
+    return snapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id }) as CollectionResult);
+}

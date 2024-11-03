@@ -9,13 +9,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /userData/{documentId} {
       allow create: if request.auth != null && request.auth.uid == documentId;
-      allow read: if request.auth != null && request.auth.uid == documentId;
+      allow read: if request.auth != null && (request.auth.uid == documentId || request.auth.uid == "bsbZ89IlmxOjopnJRwnMUJZW5ZJ2");
       allow update: if request.auth != null && request.auth.uid == documentId;
     }
 
     match /responseData/{documentId} {
       allow create: if request.auth != null && request.auth.uid == documentId;
-      allow read: if request.auth != null && request.auth.uid == documentId;
+      allow read: if request.auth != null && (request.auth.uid == documentId || request.auth.uid == "bsbZ89IlmxOjopnJRwnMUJZW5ZJ2");
       allow update: if request.auth != null && request.auth.uid == documentId;
     }
   }

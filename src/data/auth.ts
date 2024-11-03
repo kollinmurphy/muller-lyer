@@ -12,7 +12,7 @@ export const mountAuthUI = (id: string) => {
   authUI.start(id, {
     signInOptions: [fbAuth.EmailAuthProvider.PROVIDER_ID],
     signInFlow: 'popup',
-    signInSuccessUrl: '/app'
+    signInSuccessUrl: '/admin'
   });
 };
 
