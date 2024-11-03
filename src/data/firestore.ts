@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc, orderBy, limit, query, startAfter, DocumentSnapshot } from 'firebase/firestore';
 import { firebaseApp } from './firebase';
 import type { CollectionResult, UserData } from './types';
 import { userDataSignal } from './signals';
@@ -33,12 +33,44 @@ export const createResponseData = async (userId: string, data: CollectionResult)
   setUserData((prev) => ({ ...prev!, collectedData: true, percentCorrect }));
 };
 
+const PAGE_SIZE = 10;
+
 export const listUserData = async () => {
-    const snapshot = await getDocs(collection(db, USER_DATA_COLLECTION));
-    return snapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id }) as UserData);
+    const data = [];
+    let last: DocumentSnapshot | undefined = undefined;
+    let page = await getUserDataPage();
+    while (page.data.length > 0) {
+        data.push(...page.data);
+        last = page.last;
+        page = await getUserDataPage(last);
+    }
+    return data;
 }
 
 export const listResponseData = async () => {
-    const snapshot = await getDocs(collection(db, RESPONSE_DATA_COLLECTION));
-    return snapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id }) as CollectionResult);
+    const data = [];
+    let last: DocumentSnapshot | undefined = undefined;
+    let page = await getResponseDataPage();
+    while (page.data.length > 0) {
+        data.push(...page.data);
+        last = page.last;
+        page = await getResponseDataPage(last);
+    }
+    return data;
+}
+
+const getUserDataPage = async (last?: DocumentSnapshot) => {
+    const filter = [orderBy('userId'), limit(PAGE_SIZE), last ? startAfter(last) : undefined].filter(Boolean);
+    const q = query(collection(db, USER_DATA_COLLECTION), ...filter);
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id }) as UserData);
+    return {data, last: snapshot.docs[snapshot.docs.length - 1]};
+}
+
+const getResponseDataPage = async (last?: DocumentSnapshot) => {
+    const filter = [orderBy('userId'), limit(PAGE_SIZE), last ? startAfter(last) : undefined].filter(Boolean);
+    const q = query(collection(db, RESPONSE_DATA_COLLECTION), ...filter);
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id }) as CollectionResult);
+    return {data, last: snapshot.docs[snapshot.docs.length - 1]};
 }
