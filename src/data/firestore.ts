@@ -14,7 +14,7 @@ export const getUserData = async (userId: string) => {
 };
 
 export const createUserData = async (userId: string, userData: UserData) => {
-  const docRef = await setDoc(doc(collection(db, USER_DATA_COLLECTION), userId), userData);
+  await setDoc(doc(collection(db, USER_DATA_COLLECTION), userId), userData);
   return { ...userData, userId } as UserData;
 };
 
