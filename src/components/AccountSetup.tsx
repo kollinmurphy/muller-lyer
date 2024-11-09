@@ -28,6 +28,9 @@ export const AccountSetup = (props: { userId: string }) => {
             <h1>Welcome!</h1>
           </div>
           <div class="flex flex-col gap-2">
+            <p class="font-bold text-xl text-red-600">
+              This study can only be completed with a laptop or desktop computer, not a mobile device.
+            </p>
             <p>Please fill out the following information to participate in the study.</p>
             <label for="name">Name</label>
             <input type="text" value={name()} onInput={(e) => setName(e.currentTarget.value)} />
@@ -57,7 +60,7 @@ export const AccountSetup = (props: { userId: string }) => {
           </div>
         </div>
       </div>
-      <div class="text-gray-400 text-xs pt-2">v1.1.1</div>
+      <div class="text-gray-400 text-xs pt-2">v1.1.2</div>
     </div>
   );
 };
