@@ -60,7 +60,7 @@ export const AccountSetup = (props: { userId: string }) => {
           </div>
         </div>
       </div>
-      <div class="text-gray-400 text-xs pt-2">v1.1.2</div>
+      <div class="text-gray-400 text-xs pt-2">v1.1.3</div>
     </div>
   );
 };

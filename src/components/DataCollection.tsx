@@ -40,7 +40,8 @@ function getInstructions(configuration: LineConfiguration, variant: LineVariant)
           '- If you think the lines are the same length, select "same length".',
           'The figure above is a sample figure. The actual figures will be different and will only be shown for a short period of time. If you did not see a figure, please click the "Skip" button below to view a new figure.',
           'There will be variations on the sample figure that you will need to compare. Please read any additional instructions carefully for each new type of figure as they are presented.',
-          'The dashed red lines are only for demonstration purposes and will not be present in the actual figures. They indicate the ends of the line segments that you will be comparing.'
+          'The dashed red lines are only for demonstration purposes and will not be present in the actual figures. They indicate the ends of the line segments that you will be comparing.',
+          'Please only have one individual complete the tasks. If you wish to have multiple individuals participate, please have them separately complete it later.'
         ];
       }
       break;
