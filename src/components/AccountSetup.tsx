@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import { createUserData } from '../data/firestore';
 import type { EyeColor } from '../data/types';
+import { applicationVersion } from '../utils/configuration';
 
 export const AccountSetup = (props: { userId: string }) => {
   const [name, setName] = createSignal('');
@@ -32,6 +33,7 @@ export const AccountSetup = (props: { userId: string }) => {
               This study can only be completed with a laptop or desktop computer, not a mobile device.
             </p>
             <p>Please fill out the following information to participate in the study.</p>
+            <p>It should take less than 10 minutes to complete.</p>
             <label for="name">Name</label>
             <input type="text" value={name()} onInput={(e) => setName(e.currentTarget.value)} />
             <label for="email">Email</label>
@@ -60,7 +62,7 @@ export const AccountSetup = (props: { userId: string }) => {
           </div>
         </div>
       </div>
-      <div class="text-gray-400 text-xs pt-2">v1.1.3</div>
+      <div class="text-gray-400 text-xs pt-2">v{applicationVersion}</div>
     </div>
   );
 };

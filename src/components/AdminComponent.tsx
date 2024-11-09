@@ -21,18 +21,21 @@ export const AdminComponent = () => {
   const downloadResponseData = async () => {
     const trials = ['userId,configuration,variant,leftLength,rightLength,response,responseTimeMs'];
     const users = [
-      'userId,userName,email,age,eyeColor,collectedData,percentCorrect,iterations,startTime,endTime,exposureDelayMs,exposureDurationMs'
+      'userId,userName,email,age,eyeColor,collectedData,percentCorrect,iterations,startTime,endTime,exposureDelayMs,exposureDurationMs,version'
     ];
     const userData = await listUserData();
     const data = await listResponseData();
     for (const d of data) {
       const user = userData.find((u) => u.userId === d.userId);
-      if (!user) {
-        users.push(`User not found: ${d.userId}`);
+      if (!user || user.userName.toLowerCase() === 'testing') {
         continue;
       }
       users.push(
-        `${d.userId},${user.userName},${user.email},${user.age},${user.eyeColor},${user.collectedData},${user.percentCorrect},${d.iterations},${d.startTime},${d.endTime},${d.exposureDelayMs},${d.exposureDurationMs}`
+        `${d.userId},${user.userName},${user.email},${user.age},${user.eyeColor},${user.collectedData},${
+          user.percentCorrect
+        },${d.iterations},${d.startTime},${d.endTime},${d.exposureDelayMs},${d.exposureDurationMs},${
+          (d as any).version || '1.0.0'
+        }`
       );
       for (const t of d.trials) {
         trials.push(

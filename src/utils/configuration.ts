@@ -96,3 +96,5 @@ export const trialConfiguration = {
     }
   }
 };
+
+export const applicationVersion = '1.1.4';

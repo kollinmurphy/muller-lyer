@@ -2,6 +2,7 @@ import { collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc, orde
 import { firebaseApp } from './firebase';
 import type { CollectionResult, UserData } from './types';
 import { userDataSignal } from './signals';
+import { applicationVersion } from '../utils/configuration';
 
 const db = getFirestore(firebaseApp);
 const USER_DATA_COLLECTION = 'userData';
@@ -23,7 +24,7 @@ export const updateUserData = async (uid: string, userData: Partial<UserData>) =
 };
 
 export const createResponseData = async (userId: string, data: CollectionResult) => {
-  await setDoc(doc(collection(db, RESPONSE_DATA_COLLECTION), userId), { ...data, userId });
+  await setDoc(doc(collection(db, RESPONSE_DATA_COLLECTION), userId), { ...data, userId, version: applicationVersion });
   const percentCorrect = data.correct / data.iterations;
   await updateDoc(doc(db, USER_DATA_COLLECTION, userId), {
     collectedData: true,
@@ -44,7 +45,7 @@ export const listUserData = async () => {
         last = page.last;
         page = await getUserDataPage(last);
     }
-    return data;
+    return data as UserData[];
 }
 
 export const listResponseData = async () => {
@@ -56,7 +57,7 @@ export const listResponseData = async () => {
         last = page.last;
         page = await getResponseDataPage(last);
     }
-    return data;
+    return data as (CollectionResult & {version?: string})[];
 }
 
 const getUserDataPage = async (last?: DocumentSnapshot) => {
