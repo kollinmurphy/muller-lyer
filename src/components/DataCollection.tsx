@@ -43,7 +43,7 @@ function getInstructions(configuration: LineConfiguration, variant: LineVariant)
           'The dashed red lines are only for demonstration purposes and will not be present in the actual figures. They indicate the ends of the line segments that you will be comparing.'
         ];
       }
-      return [];
+      break;
     }
     case 'arrowhead': {
       if (configuration === 'vertical') {
@@ -54,11 +54,13 @@ function getInstructions(configuration: LineConfiguration, variant: LineVariant)
       if (configuration === 'brentano') {
         return ['Compare the lengths of the center line segments as indicated by the dashed red lines.'];
       }
+      break;
     }
     case 'square': {
       if (configuration === 'brentano') {
         return ['Compare the lengths of the center line segments as indicated by the dashed red lines.'];
       }
+      break;
     }
     case 'obliques': {
       if (configuration === 'vertical') {
@@ -67,6 +69,7 @@ function getInstructions(configuration: LineConfiguration, variant: LineVariant)
       if (configuration === 'brentano') {
         return ['Compare the distances between the points of the arrow heads as indicated by the dashed red lines.'];
       }
+      break;
     }
   }
   return [];
