@@ -51,18 +51,35 @@ export const variations: LineVariant[] = ['baseline', 'arrowhead', 'square', 'ci
 
 export const trialsPerConfigurationVariation = 5;
 
-export const configurationVariations: [LineConfiguration, LineVariant][] = configurations.flatMap(
-  (c): [LineConfiguration, LineVariant][] => variations.map((v): [LineConfiguration, LineVariant] => [c, v])
-).filter(([config, variant]) => config !== 'brentano' || variant !== 'baseline').sort(([, variantA], [,variantB]) => {
-    // sort baseline variant to beginning
-    if (variantA === 'baseline') {
-      return -1;
-    }
-    if (variantB === 'baseline') {
-      return 1;
-    }
-    return 0;
-})
+// export const configurationVariations: [LineConfiguration, LineVariant][] = configurations.flatMap(
+//   (c): [LineConfiguration, LineVariant][] => variations.map((v): [LineConfiguration, LineVariant] => [c, v])
+// ).filter(([config, variant]) => config !== 'brentano' || variant !== 'baseline').sort(([, variantA], [,variantB]) => {
+//     // sort baseline variant to beginning
+//     if (variantA === 'baseline') {
+//       return -1;
+//     }
+//     if (variantB === 'baseline') {
+//       return 1;
+//     }
+//     return 0;
+// })
+
+export const configurationVariations: [LineConfiguration, LineVariant][] = [
+  ['vertical', 'baseline'],
+  ['offset', 'baseline'],
+  ['vertical', 'arrowhead'],
+  ['vertical', 'square'],
+  ['vertical', 'circle'],
+  ['vertical', 'obliques'],
+  ['offset', 'arrowhead'],
+  ['offset', 'square'],
+  ['offset', 'circle'],
+  ['offset', 'obliques'],
+  ['brentano', 'arrowhead'],
+  ['brentano', 'square'],
+  ['brentano', 'circle'],
+  ['brentano', 'obliques']
+];
 
 export const trialConfiguration = {
   exposureMs: 500,
@@ -97,4 +114,4 @@ export const trialConfiguration = {
   }
 };
 
-export const applicationVersion = '1.1.4';
+export const applicationVersion = '1.1.5';

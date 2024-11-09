@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createEffect, createSignal, For, Show } from 'solid-js';
 import { userDataSignal } from '../data/signals';
 import type { CollectedTrial, CollectionResult, LineConfiguration, LineVariant, State, TrialData } from '../data/types';
 import { Canvas } from './Canvas';
@@ -187,6 +187,8 @@ export const DataCollection = () => {
     prepareNextFigure();
   };
 
+  const continueEnabled = () => understandChecked() || !sampleFigure() || sampleFigure().instructions.length === 0;
+
   const isHorizontal = () => next()?.configuration === 'brentano';
   const left = () => (isHorizontal() ? 'left' : 'top');
   const right = () => (isHorizontal() ? 'right' : 'bottom');
@@ -224,7 +226,7 @@ export const DataCollection = () => {
                 </label>
               </div>
             </Show>
-            <button class="btn btn-primary w-min mx-auto" onClick={prepareNextFigure} disabled={!understandChecked()}>
+            <button class="btn btn-primary w-min mx-auto" onClick={prepareNextFigure} disabled={!continueEnabled()}>
               Continue
             </button>
           </Show>

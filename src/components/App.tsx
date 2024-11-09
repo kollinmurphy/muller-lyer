@@ -6,6 +6,7 @@ import { getUserData } from '../data/firestore';
 import { AccountSetup } from './AccountSetup';
 import { DataCollection } from './DataCollection';
 import { ThankYou } from './ThankYou';
+import { applicationVersion } from '../utils/configuration';
 
 export const AppComponent = () => {
   const [user] = userSignal;
@@ -42,6 +43,7 @@ export const AppComponent = () => {
         <button class="btn btn-ghost btn-primary btn-xs" onClick={signOut}>
           Sign Out
         </button>
+        <div class="text-gray-400 text-xs pt-2 absolute top-1 right-1">v{applicationVersion}</div>
       </Show>
     </div>
   );
