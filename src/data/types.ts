@@ -6,6 +6,7 @@ export interface UserData {
   eyeColor: string;
   collectedData: boolean;
   percentCorrect?: number;
+  gender?: Gender;
 }
 
 export type EyeColor = 'blue' | 'brown' | 'green' | 'hazel' | 'amber' | 'gray' | 'other';
@@ -13,6 +14,8 @@ export type EyeColor = 'blue' | 'brown' | 'green' | 'hazel' | 'amber' | 'gray' |
 export type LineConfiguration = 'brentano' | 'offset' | 'vertical';
 
 export type LineVariant = 'baseline' | 'arrowhead' | 'circle' | 'square' | 'obliques';
+
+export type Gender = 'male' | 'female' | '-';
 
 export interface TrialData {
   configuration: LineConfiguration;

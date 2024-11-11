@@ -1,12 +1,13 @@
 import { createSignal } from 'solid-js';
 import { createUserData } from '../data/firestore';
-import type { EyeColor } from '../data/types';
+import type { EyeColor, Gender } from '../data/types';
 import { applicationVersion } from '../utils/configuration';
 
 export const AccountSetup = (props: { userId: string }) => {
   const [name, setName] = createSignal('');
   const [email, setEmail] = createSignal('');
   const [age, setAge] = createSignal(0);
+  const [gender, setGender] = createSignal<Gender>('female');
   const [eyeColor, setEyeColor] = createSignal<EyeColor>('blue');
 
   const save = async () => {
@@ -16,7 +17,8 @@ export const AccountSetup = (props: { userId: string }) => {
       email: email(),
       collectedData: false,
       age: age(),
-      eyeColor: eyeColor()
+      eyeColor: eyeColor(),
+      gender: gender()
     });
     location.reload();
   };
@@ -40,6 +42,12 @@ export const AccountSetup = (props: { userId: string }) => {
             <input type="text" value={email()} onInput={(e) => setEmail(e.currentTarget.value)} />
             <label for="age">Age</label>
             <input type="number" value={age()} onInput={(e) => setAge(parseInt(e.currentTarget.value))} />
+            <label for="gender">Gender</label>
+            <select value={gender()} onChange={(e) => setGender(e.currentTarget.value as Gender)}>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="-">Prefer not to say</option>
+            </select>
             <label for="eyeColor">Eye Color</label>
             <select value={eyeColor()} onChange={(e) => setEyeColor(e.currentTarget.value as EyeColor)}>
               <option value="blue">Blue</option>

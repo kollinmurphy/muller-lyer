@@ -114,4 +114,4 @@ export const trialConfiguration = {
   }
 };
 
-export const applicationVersion = '1.1.5';
+export const applicationVersion = '1.1.6';
