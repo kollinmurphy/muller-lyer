@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from scipy.stats import ttest_ind
 
 if os.path.exists('output'):
     for file in os.listdir('output'):
@@ -13,14 +14,14 @@ if os.path.exists('output'):
             os.rmdir(file_path)
     os.rmdir('output')
 os.makedirs('output', exist_ok=True)
-os.makedirs('output/illusion-by-delta', exist_ok=True)
 
 user_data = pd.read_csv('input/user-data.csv')
 trial_data = pd.read_csv('input/trial-data.csv')
 
 cap_guesses = False
 
-# estimate the perceived delta for each trial by using the heuristics:
+# calculates the estimated value of leftLength - rightLength.
+# the perceived delta for each trial is estimated using the heuristics:
 # - if the response is 'left-definitely-longer', use 3 mm
 # - if the response is 'left-slightly-longer', use 1 mm
 # - if the response is 'same-length', use 0 mm
@@ -52,25 +53,27 @@ def estimate_perceived_delta(row):
     else:
         raise ValueError(f'Invalid response: {row["response"]}')
     
-def is_illusion_expected(row):
-    return row['length_delta'] >= 0
+def calculate_perceptual_bias(row):
+    return row['perceived_delta'] - row['length_delta']
+
+def calculate_normalized_perceptual_bias(row):
+    return row['perceptual_bias'] / ((row['leftLength'] + row['rightLength']) / 2)
 
 # perform the data analysis
 
 merged_data = pd.merge(user_data, trial_data, on='userId')
 merged_data['length_delta'] = merged_data['leftLength'] - merged_data['rightLength']
 merged_data['perceived_delta'] = merged_data.apply(estimate_perceived_delta, axis=1)
-merged_data['perceived_illusion'] = merged_data['length_delta'] - merged_data['perceived_delta']
-merged_data['trial_success'] = merged_data.apply(lambda x: x['perceived_illusion'] == 0, axis=1)
+merged_data['perceptual_bias'] = merged_data.apply(calculate_perceptual_bias, axis=1)
+merged_data['normalized_perceptual_bias'] = merged_data.apply(calculate_normalized_perceptual_bias, axis=1)
 merged_data.to_csv('output/merged-data.csv', index=False)
-expected_illusion_data = merged_data[merged_data.apply(is_illusion_expected, axis=1)]
 
 
-# calculate the average perceived illusion for each user
-average_perceived_illusion = merged_data.groupby('userId')['perceived_illusion'].mean().reset_index()
-average_perceived_illusion['name'] = average_perceived_illusion['userId'].apply(lambda x: user_data[user_data['userId'] == x]['userName'].values[0])
-average_perceived_illusion = average_perceived_illusion.sort_values('perceived_illusion')
-average_perceived_illusion.to_csv('output/average-perceived_illusion.csv', index=False)
+# calculate the average normalized Perceptual Bias for each user
+average_normalized_perceptual_bias = merged_data.groupby('userId')['normalized_perceptual_bias'].mean().reset_index()
+average_normalized_perceptual_bias['name'] = average_normalized_perceptual_bias['userId'].apply(lambda x: user_data[user_data['userId'] == x]['userName'].values[0])
+average_normalized_perceptual_bias = average_normalized_perceptual_bias.sort_values('normalized_perceptual_bias')
+average_normalized_perceptual_bias.to_csv('output/average-normalized_perceptual_bias.csv', index=False)
 
 
 # create the plots
@@ -78,91 +81,96 @@ average_perceived_illusion.to_csv('output/average-perceived_illusion.csv', index
 
 # separate the data into groups by variant
 variant_groups = merged_data.groupby('variant')
-expected_illusion_variant_groups = expected_illusion_data.groupby('variant')
-no_expected_illusion_variant_groups = merged_data[~merged_data.apply(is_illusion_expected, axis=1)].groupby('variant')
 
-# create a box plot of perceived illusion for each variant
+# create a box plot of normalized Perceptual Bias for each variant
 plt.clf()
 position = 0
 for name, group in variant_groups:
-    plt.boxplot(group['perceived_illusion'], positions=[position], showfliers=False, showmeans=True)
+    plt.boxplot(group['normalized_perceptual_bias'], positions=[position], showfliers=False, showmeans=True)
     position += 1
 plt.xticks(range(len(variant_groups)), variant_groups.groups.keys())
 plt.xlabel('Variant')
-plt.ylabel('Perceived Illusion (mm)')
-plt.title('Perceived Illusion by Variant')
+plt.ylabel('Normalized Perceptual Bias')
+plt.title('Normalized Perceptual Bias by Variant')
 plt.grid(axis='y')
-plt.savefig('output/illusion-by-variant.png')
+plt.savefig('output/normalized-perceptual-bias-by-variant-box.png')
 
-# create a distribution of perceived illusion values for each variant for trials with expected illusion
-plt.clf()
-for name, group in expected_illusion_variant_groups:
-    group['perceived_illusion'].plot(kind='kde', label=name, bw_method=0.6)
-plt.xlabel('Perceived Illusion (mm)')
-plt.ylabel('Density')
-plt.title('Perceived Illusion Distribution by Variant for Trials with Expected Illusion')
-plt.legend()
-plt.grid(True)
-plt.xticks([x * 2 for x in range(-3, 4)])
-plt.xlim(-6, 6)
-plt.savefig('output/illusion-distribution-by-variant-with-expected-illusion.png')
-
-# create a distribution of perceived illusion values for each variant for trials without expected illusion
-plt.clf()
-for name, group in no_expected_illusion_variant_groups:
-    group['perceived_illusion'].plot(kind='kde', label=name, bw_method=0.6)
-plt.xlabel('Perceived Illusion (mm)')
-plt.ylabel('Density')
-plt.title('Perceived Illusion Distribution by Variant for Trials without Expected Illusion')
-plt.legend()
-plt.grid(True)
-plt.xticks([x * 2 for x in range(-3, 4)])
-plt.xlim(-6, 6)
-plt.savefig('output/illusion-distribution-by-variant-no-expected-illusion.png')
-
-# create a distribution of perceived illusion values for each variant for all trials
 plt.clf()
 for name, group in variant_groups:
-    group['perceived_illusion'].plot(kind='kde', label=name, bw_method=0.6)
-plt.xlabel('Perceived Illusion (mm)')
+    group['normalized_perceptual_bias'].plot(kind='kde', label=name, bw_method=0.6)
+plt.xlabel('Normalized Perceptual Bias')
 plt.ylabel('Density')
-plt.title('Perceived Illusion Distribution by Variant for All Trials')
+plt.title('Distribution of Normalized Perceptual Bias by Variant')
 plt.legend()
 plt.grid(True)
-plt.xticks([x * 2 for x in range(-3, 4)])
-plt.xlim(-6, 6)
-plt.savefig('output/illusion-distribution-by-variant-all.png')
+plt.savefig('output/normalized-perceptual-bias-by-variant-graph.png')
 
-# create a box plot of perceived illusion for each delta
-plt.clf()
-position = 0
-delta_groups_excluding_baseline = merged_data[~merged_data['variant'].isin(['baseline'])].groupby('length_delta')
-for name, group in delta_groups_excluding_baseline:
-    plt.boxplot(group['perceived_illusion'], positions=[position], showfliers=False, showmeans=True)
-    position += 1
-plt.xticks(range(len(delta_groups_excluding_baseline)), delta_groups_excluding_baseline.groups.keys())
-plt.xlabel('Actual Delta (mm)')
-plt.ylabel('Perceived Illusion (mm)')
-plt.title('Perceived Illusion by Actual Delta (excluding baseline)')
-plt.grid(axis='y')
-plt.ylim(-6, 6)
-plt.yticks(range(-5, 6))
-plt.savefig('output/illusion-by-delta/overall.png')
+# perform a t-test to determine if the normalized Perceptual Bias is significantly different between the variants
+baseline_group = variant_groups.get_group('baseline')
+without_baseline = variant_groups.groups.keys() - ['baseline']
+ttest_results = {}
 
-# create a box plot of perceived illusion for each delta for each variant
+for variant in without_baseline:
+    variant_group = variant_groups.get_group(variant)
+    t_stat, p_value = ttest_ind(baseline_group['normalized_perceptual_bias'], variant_group['normalized_perceptual_bias'])
+    for variant2 in variant_groups.groups.keys():
+        if variant2 != variant:
+            variant_a = variant if variant < variant2 else variant2
+            variant_b = variant2 if variant < variant2 else variant
+            if f'{variant_a}-{variant_b}' not in ttest_results:
+                variant2_group = variant_groups.get_group(variant2)
+                t_stat, p_value = ttest_ind(variant_group['normalized_perceptual_bias'], variant2_group['normalized_perceptual_bias'])
+                # Format p-value to 5 significant figures
+                ttest_results[f'{variant_a}-{variant_b}'] = (t_stat, f'{p_value:.5g}')
+    
+ttest_results_df = pd.DataFrame(ttest_results).T
+ttest_results_df.columns = ['t_stat', 'p_value']
+ttest_results_df.index.name = 'variants'
+ttest_results_df.to_csv('output/ttest-results.csv')
+
 for name, group in variant_groups:
+    configuration_groups = group.groupby('configuration')
+
     plt.clf()
-    variant_delta_groups = group.groupby('length_delta')
     position = 0
-    for delta, delta_group in variant_delta_groups:
-        plt.boxplot(delta_group['perceived_illusion'], positions=[position], showfliers=False, showmeans=True)
+    for configuration, configuration_group in configuration_groups:
+        plt.boxplot(configuration_group['normalized_perceptual_bias'], positions=[position], showfliers=False, showmeans=True)
         position += 1
-    plt.xticks(range(len(variant_delta_groups)), variant_delta_groups.groups.keys())
-    plt.xlabel('Actual Delta (mm)')
-    plt.ylabel('Perceived Illusion (mm)')
-    plt.title(f'Perceived Illusion by Actual Delta for {name}')
+    plt.xticks(range(len(configuration_groups)), configuration_groups.groups.keys())
+    plt.xlabel('Configuration')
+    plt.ylabel('Normalized Perceptual Bias')
+    plt.title(f'Normalized Perceptual Bias by Configuration for {name}')
     plt.grid(axis='y')
-    plt.ylim(-6, 6)
-    plt.yticks(range(-5, 6))
-    plt.savefig(f'output/illusion-by-delta/{name}.png')
+    plt.savefig(f'output/normalized-perceptual-bias-by-configuration-{name}-box.png')
 
+    plt.clf()
+    for configuration, configuration_group in configuration_groups:
+        configuration_group['normalized_perceptual_bias'].plot(kind='kde', label=configuration, bw_method=0.6)
+    plt.xlabel('Normalized Perceptual Bias')
+    plt.ylabel('Density')
+    plt.title(f'Distribution of Normalized Perceptual Bias by Configuration for {name}')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'output/normalized-perceptual-bias-by-configuration-{name}-graph.png')
+
+# perform a t-test to determine if the normalized Perceptual Bias is significantly different between the configurations
+for name, group in variant_groups:
+    configuration_groups = group.groupby('configuration')
+    ttest_results = {}
+
+    for configuration in configuration_groups.groups.keys():
+        configuration_group = configuration_groups.get_group(configuration)
+        for configuration2 in configuration_groups.groups.keys():
+            if configuration2 != configuration:
+                configuration_a = configuration if configuration < configuration2 else configuration2
+                configuration_b = configuration2 if configuration < configuration2 else configuration
+                if f'{configuration_a}-{configuration_b}' not in ttest_results:
+                    configuration2_group = configuration_groups.get_group(configuration2)
+                    t_stat, p_value = ttest_ind(configuration_group['normalized_perceptual_bias'], configuration2_group['normalized_perceptual_bias'])
+                    # Format p-value to 5 significant figures
+                    ttest_results[f'{configuration_a}-{configuration_b}'] = (t_stat, f'{p_value:.5g}')
+    
+    ttest_results_df = pd.DataFrame(ttest_results).T
+    ttest_results_df.columns = ['t_stat', 'p_value']
+    ttest_results_df.index.name = 'configurations'
+    ttest_results_df.to_csv(f'output/ttest-results-{name}.csv')
