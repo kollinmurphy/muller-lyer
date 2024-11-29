@@ -27,3 +27,7 @@ yarn.lock
 analysis/input/
 analysis/output/
 .vscode/terminals.json
+doc/samples/
+doc/samples-cropped/
+doc/samples-resized/
+doc/*.pdf
