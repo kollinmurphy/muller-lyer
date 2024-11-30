@@ -2,10 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from scipy.stats import ttest_ind
+import numpy as np
 
 plt.rcParams.update({
     'savefig.dpi': 300,
-    'savefig.transparent': True,
+    # 'savefig.transparent': True,
     'savefig.bbox': 'tight',
     'savefig.pad_inches': 0.0
 })
@@ -71,27 +72,14 @@ average_perceptual_bias.sort_values('perceptual_bias').to_csv('output/average-pe
 # separate the data into groups by variant
 variant_groups = merged_data.groupby('variant')
 
-# create a box plot of perceptual bias for each variant
-plt.clf()
-position = 0
-for name, group in variant_groups:
-    plt.boxplot(group['perceptual_bias'], positions=[position], showfliers=False, showmeans=True)
-    position += 1
-plt.xticks(range(len(variant_groups)), variant_groups.groups.keys())
-plt.xlabel('Variant')
-plt.ylabel('Perceptual Bias')
-plt.title('Perceptual Bias by Variant')
-plt.grid(axis='y')
-plt.savefig('output/perceptual-bias-by-variant-box.png')
-
 plt.clf()
 for name, group in variant_groups:
     group['perceptual_bias'].plot(kind='kde', label=name, bw_method=0.6)
-plt.xlabel('Perceptual Bias')
+plt.xlabel('Perceptual Bias (mm)')
 plt.ylabel('Density')
-plt.title('Distribution of Perceptual Bias by Variant')
 plt.legend()
 plt.grid(True)
+plt.xlim(-6, 6)
 plt.savefig('output/perceptual-bias-by-variant-graph.png')
 
 # perform a t-test to determine if the perceptual bias is significantly different between the variants
@@ -121,25 +109,13 @@ for name, group in variant_groups:
     configuration_groups = group.groupby('configuration')
 
     plt.clf()
-    position = 0
-    for configuration, configuration_group in configuration_groups:
-        plt.boxplot(configuration_group['perceptual_bias'], positions=[position], showfliers=False, showmeans=True)
-        position += 1
-    plt.xticks(range(len(configuration_groups)), configuration_groups.groups.keys())
-    plt.xlabel('Configuration')
-    plt.ylabel('Perceptual Bias')
-    plt.title(f'Perceptual Bias by Configuration for {name}')
-    plt.grid(axis='y')
-    plt.savefig(f'output/perceptual-bias-by-configuration-{name}-box.png')
-
-    plt.clf()
     for configuration, configuration_group in configuration_groups:
         configuration_group['perceptual_bias'].plot(kind='kde', label=configuration, bw_method=0.6)
-    plt.xlabel('Perceptual Bias')
+    plt.xlabel('Perceptual Bias (mm)')
     plt.ylabel('Density')
-    plt.title(f'Distribution of Perceptual Bias by Configuration for {name}')
     plt.legend()
     plt.grid(True)
+    plt.xlim(-6, 6)
     plt.savefig(f'output/perceptual-bias-by-configuration-{name}-graph.png')
 
 # perform a t-test to determine if the perceptual bias is significantly different between the configurations
@@ -177,7 +153,6 @@ for name, group in variant_groups:
 plt.xlabel('Response Time (ms)')
 plt.ylabel('Density')
 plt.yticks([])
-plt.title('Distribution of Response Time by Variant')
 plt.xlim(0, 8000)
 plt.legend()
 plt.grid(True)
@@ -218,7 +193,6 @@ for configuration, group in merged_data.groupby('configuration'):
 plt.xlabel('Response Time (ms)')
 plt.ylabel('Density')
 plt.yticks([])
-plt.title('Distribution of Response Time by Configuration')
 plt.xlim(0, 7000)
 plt.legend()
 plt.grid(True)
@@ -280,3 +254,103 @@ ttest_results_df.to_csv('output/ttest-results-eye-color.csv')
 ttest_results_df['Eye Color A'] = ttest_results_df.index.str.split('-').str[0]
 ttest_results_df['Eye Color B'] = ttest_results_df.index.str.split('-').str[1]
 ttest_results_df[['Eye Color A', 'Eye Color B', 'p_value']].sort_values('p_value').to_markdown('output/ttest-results-eye-color.md', index=False)
+
+# determine mean, median, and standard deviation of perceptual bias for each configuration for each variant
+summary_data = merged_data.groupby(['variant', 'configuration'])['perceptual_bias'].agg(['mean', 'median', 'std']).reset_index()
+summary_data.to_csv('output/summary-data.csv', index=False)
+summary_data.to_markdown('output/summary-data.md', index=False)
+
+# create a distribution of the perceptual bias for vertical, offset, and Brentano configurations, combining circle, square, and arrowhead variants
+plt.clf()
+groups = {}
+for configuration in ['vertical', 'offset', 'brentano']:
+    configuration_group = merged_data[merged_data['configuration'] == configuration]
+    configuration_group = configuration_group[configuration_group['variant'].isin(['circle', 'square', 'arrowhead'])]
+    groups[configuration] = configuration_group
+    configuration_group['perceptual_bias'].plot(kind='kde', label=configuration, bw_method=0.6)
+plt.xlabel('Perceptual Bias (mm)')
+plt.ylabel('Density')
+plt.legend()
+plt.grid(True)
+plt.xlim(-6, 6)
+plt.savefig('output/perceptual-bias-by-configuration.png')
+
+# perform a t-test to determine if the perceptual bias is significantly different between the configurations
+configuration_groups = merged_data.groupby('configuration')
+ttest_results = {}
+
+for configuration in ['vertical', 'offset', 'brentano']:
+    configuration_group = groups[configuration]
+    for configuration2 in ['vertical', 'offset', 'brentano']:
+        if configuration2 != configuration:
+            configuration_a = configuration if configuration < configuration2 else configuration2
+            configuration_b = configuration2 if configuration < configuration2 else configuration
+            if f'{configuration_a}-{configuration_b}' not in ttest_results:
+                configuration2_group = groups[configuration2]
+                t_stat, p_value = ttest_ind(configuration_group['perceptual_bias'], configuration2_group['perceptual_bias'])
+                ttest_results[f'{configuration_a}-{configuration_b}'] = (t_stat, f'{p_value:.5g}')
+
+ttest_results_df = pd.DataFrame(ttest_results).T
+ttest_results_df.columns = ['t_stat', 'p_value']
+ttest_results_df.index.name = 'configurations'
+ttest_results_df.to_csv('output/ttest-results-configuration.csv')
+
+# create a scatter plot of age and perceptual bias
+plt.clf()
+plt.scatter(merged_data['age'], merged_data['perceptual_bias'], alpha=0.5)
+plt.xlabel('Age (years)')
+plt.ylabel('Perceptual Bias (mm)')
+plt.grid(True)
+plt.savefig('output/age-vs-perceptual-bias.png')
+
+# perform a correlation test to determine if age and perceptual bias are correlated
+correlation = merged_data[['age', 'perceptual_bias']].corr()
+correlation.to_csv('output/age-correlation.csv')
+
+# create a scatter plot of response time and perceptual bias
+plt.clf()
+q1 = merged_data['responseTimeMs'].quantile(0.25)
+q3 = merged_data['responseTimeMs'].quantile(0.75)
+iqr = q3 - q1
+lower_bound = q1 - 1.5 * iqr
+upper_bound = q3 + 1.5 * iqr
+response_data = merged_data[(merged_data['responseTimeMs'] > lower_bound) & (merged_data['responseTimeMs'] < upper_bound)]
+
+# perform a correlation test to determine if response time and perceptual bias are correlated
+correlation = response_data[['responseTimeMs', 'perceptual_bias']].corr()
+correlation.to_csv('output/response-time-correlation.csv')
+
+plt.scatter(response_data['responseTimeMs'], response_data['perceptual_bias'], alpha=0.5)
+# draw a line of best fit
+m, b = np.polyfit(response_data['responseTimeMs'], response_data['perceptual_bias'], 1)
+plt.plot(response_data['responseTimeMs'], m * response_data['responseTimeMs'] + b, color='red')
+plt.xlabel('Response Time (ms)')
+plt.ylabel('Perceptual Bias (mm)')
+plt.grid(True)
+plt.savefig('output/response-time-vs-perceptual-bias.png')
+
+# create a distribution of perceptual bias and gender
+male_group = merged_data[merged_data['gender'] == 'male']
+female_group = merged_data[merged_data['gender'] == 'female']
+
+plt.clf()
+male_group['perceptual_bias'].plot(kind='kde', label='Male', bw_method=0.6)
+female_group['perceptual_bias'].plot(kind='kde', label='Female', bw_method=0.6)
+plt.xlabel('Perceptual Bias (mm)')
+plt.ylabel('Density')
+plt.legend()
+plt.grid(True)
+plt.xlim(-6, 6)
+plt.savefig('output/perceptual-bias-by-gender.png')
+
+# perform t-test of perceptual bias and gender
+t_stat, p_value = ttest_ind(male_group['perceptual_bias'], female_group['perceptual_bias'])
+ttest_results = {
+    't_stat': t_stat,
+    'p_value': p_value
+}
+# write t-test results to file
+with open('output/ttest-results-gender.txt', 'w') as f:
+    f.write(f'T-statistic: {t_stat}\n')
+    f.write(f'P-value: {p_value}\n')
+
